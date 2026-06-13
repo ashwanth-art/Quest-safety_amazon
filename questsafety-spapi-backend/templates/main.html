@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>QuestSafety Pipeline</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260613-admin10">
+  </head>
+  <body class="discovery-app">
+    <aside class="app-rail" aria-label="Workspace navigation">
+      <a class="rail-logo" href="/pipeline" aria-label="Pipeline">Q</a>
+      <a class="rail-icon is-active" href="/pipeline" title="Pipeline" aria-label="Pipeline"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path></svg></a>
+      <a class="rail-icon has-dot" href="/review" title="Review" aria-label="Review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 6"></path></svg></a>
+      <a class="rail-icon" href="/dashboard" title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h12"></path></svg></a>
+      <button class="rail-icon" type="button" data-logout title="Logout" aria-label="Logout"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M3 12h2M19 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg></button>
+    </aside>
+
+    <div class="app-frame">
+      <header class="workspace-header">
+        <a class="workspace-title" href="/pipeline">Amazon Seller Discovery</a>
+        <nav class="workspace-tabs" aria-label="Primary">
+          <a class="is-active" href="/pipeline">Pipeline</a>
+          <a href="/review">Review <span id="reviewNavCount">0</span></a>
+          <a href="/dashboard">Dashboard</a>
+        </nav>
+        <div class="workspace-status">
+          <span><i></i>Agents live - synced now</span>
+          <span>Prophet 21 to Amazon Seller Central</span>
+          <button type="button" data-logout>Logout</button>
+        </div>
+      </header>
+
+      <main class="workspace-main">
+        <section id="pipelineFlow" class="pipeline-flow" hidden>
+          <div class="flow-head">
+            <h1>Candidate flow</h1>
+            <p>From competitor scan to live Amazon listings - latest pipeline run</p>
+          </div>
+
+          <div class="flow-steps">
+            <article>
+              <span>Discovered</span>
+              <strong id="flowDiscovered">0</strong>
+              <p>Quest catalog SKUs scanned</p>
+            </article>
+            <div class="flow-rate">
+              <strong id="flowMarginRate">0%</strong>
+              <span>-&gt;</span>
+            </div>
+            <article>
+              <span>Margin-qualified</span>
+              <strong id="flowMarginQualified">0</strong>
+              <p>cleared the 20% floor</p>
+            </article>
+            <div class="flow-rate">
+              <strong>100%</strong>
+              <span>-&gt;</span>
+            </div>
+            <article>
+              <span>Risk-categorized</span>
+              <strong id="flowRiskCategorized">0</strong>
+              <p id="flowRiskBreakdown">0 Low - 0 Med - 0 High</p>
+            </article>
+            <div class="flow-rate">
+              <strong id="flowApproveRate">0%</strong>
+              <span>-&gt;</span>
+            </div>
+            <article class="approved">
+              <span>Approved &amp; listed</span>
+              <strong id="flowApproved">0</strong>
+              <p id="flowReviewNote">0 routed to Review</p>
+            </article>
+          </div>
+
+          <div class="lifecycle-row">
+            <strong>SKU lifecycle</strong>
+            <span><i></i>Discovered</span>
+            <span>&gt;</span>
+            <span><i></i>Margin analyzed</span>
+            <span>&gt;</span>
+            <span><i></i>Risk categorized</span>
+            <span>&gt;</span>
+            <span><i class="orange"></i>Approval</span>
+            <span>&gt;</span>
+            <span><i class="blue"></i>Listed on Amazon</span>
+          </div>
+        </section>
+
+        <section class="pipeline-controls">
+          <div>
+            <p class="section-kicker">Data discovery</p>
+            <h2>Run the QuestSafety Amazon push pipeline</h2>
+          </div>
+          <label>
+            Search after run
+            <input id="mainSearch" placeholder="SKU, ASIN, brand, or product..." autocomplete="off">
+          </label>
+          <label>
+            Monthly revenue threshold
+            <input id="revenueThreshold" type="number" min="0" value="2000">
+          </label>
+          <label>
+            Required margin
+            <input id="minMargin" type="number" min="0" max="95" value="20">
+          </label>
+          <button id="runResearchButton" type="button">Run pipeline</button>
+          <button id="resetMain" type="button" class="ghost-orange">Reset</button>
+          <span id="runStatus" class="status-pill">Waiting</span>
+          <span id="headerStatus" class="count-pill">Not run</span>
+        </section>
+
+        <section class="data-discovery-grid">
+          <article>
+            <div class="source-mark p21">P21</div>
+            <div>
+              <h2>Prophet 21 catalog</h2>
+              <p>Quest ERP - SKUs, cost, availability</p>
+              <strong id="p21SkuCount">0 <span>SKUs</span></strong>
+              <small>Synced from sandbox JSON</small>
+            </div>
+            <dl>
+              <div><dt>Cost coverage</dt><dd id="p21CostCoverage">0%</dd></div>
+              <div><dt>Sync cadence</dt><dd>Hourly</dd></div>
+            </dl>
+          </article>
+
+          <article>
+            <div class="source-mark amazon">a</div>
+            <div>
+              <h2>Amazon marketplace scan</h2>
+              <p>Competitor listings matched to Quest range</p>
+              <strong id="amazonCandidateCount">0 <span>candidates</span></strong>
+              <small>Scan complete after run</small>
+            </div>
+            <dl>
+              <div><dt>Match rate</dt><dd id="amazonMatchRate">0%</dd></div>
+              <div><dt>Unmatched</dt><dd id="amazonExceptionCount">0</dd></div>
+              <div><dt>Scan cadence</dt><dd>Daily</dd></div>
+            </dl>
+          </article>
+        </section>
+
+        <section id="analysisResults" hidden>
+          <section class="summary-strip" aria-label="Research summary">
+            <article>
+              <span>Products analyzed</span>
+              <strong id="summarySkuCount">0</strong>
+            </article>
+            <article>
+              <span>Push candidates</span>
+              <strong id="summaryPushCount">0</strong>
+            </article>
+            <article>
+              <span>Monthly revenue</span>
+              <strong id="summaryRevenue">$0</strong>
+            </article>
+            <article>
+              <span>Weighted margin</span>
+              <strong id="summaryMargin">0%</strong>
+            </article>
+          </section>
+
+          <section class="work-grid">
+            <div>
+              <div class="section-heading">
+                <div>
+                  <p class="section-kicker">Listing queue</p>
+                  <h2>Products to push to Amazon</h2>
+                </div>
+                <span id="queueCount" class="muted-meta">0 products</span>
+              </div>
+              <div id="productQueue" class="product-queue"></div>
+            </div>
+
+            <aside id="decisionStudio" class="decision-studio" aria-live="polite">
+              <div class="studio-header">
+                <div>
+                  <p class="section-kicker">Decision studio</p>
+                  <h2 id="studioSku">Run analysis</h2>
+                </div>
+                <span id="studioScore" class="score-pill">0/100</span>
+              </div>
+              <div id="studioBody" class="studio-body">
+                <div class="empty-state">Run the pipeline to see recommendation, competitors, decision gates, and risk analysis.</div>
+              </div>
+            </aside>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/shell.js?v=20260613-admin10"></script>
+    <script src="/static/main.js?v=20260613-admin10"></script>
+  </body>
+</html>
