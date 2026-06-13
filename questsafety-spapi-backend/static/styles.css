@@ -1777,7 +1777,7 @@ tbody tr:hover {
 
 .discovery-app {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-columns: 76px minmax(0, 1fr);
 }
 
 .app-rail {
@@ -1786,9 +1786,9 @@ tbody tr:hover {
   display: grid;
   grid-auto-rows: max-content;
   justify-items: center;
-  gap: 20px;
+  gap: 14px;
   min-height: 100vh;
-  padding: 24px 12px;
+  padding: 16px 8px;
   background: #1d304b;
 }
 
@@ -1796,12 +1796,12 @@ tbody tr:hover {
 .source-mark {
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
   background: #f26a05;
   color: #ffffff;
-  font-size: 1.55rem;
+  font-size: 1.25rem;
   font-weight: 900;
   text-decoration: none;
 }
@@ -1810,18 +1810,18 @@ tbody tr:hover {
   position: relative;
   display: grid;
   place-items: center;
-  width: 62px;
-  height: 62px;
+  width: 50px;
+  height: 50px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 13px;
   background: transparent;
   color: #a9bdd7;
   text-decoration: none;
 }
 
 .rail-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -1837,9 +1837,9 @@ tbody tr:hover {
 .rail-icon.is-active::before {
   content: "";
   position: absolute;
-  left: -13px;
+  left: -9px;
   width: 4px;
-  height: 36px;
+  height: 30px;
   border-radius: 999px;
   background: #f26a05;
 }
@@ -1847,8 +1847,8 @@ tbody tr:hover {
 .rail-icon.has-dot::after {
   content: "";
   position: absolute;
-  right: 15px;
-  top: 19px;
+  right: 12px;
+  top: 15px;
   width: 6px;
   height: 6px;
   border-radius: 999px;
@@ -1864,18 +1864,18 @@ tbody tr:hover {
   top: 0;
   z-index: 15;
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto minmax(420px, 1fr);
-  gap: 22px;
+  grid-template-columns: minmax(210px, 0.85fr) auto minmax(360px, 1.15fr);
+  gap: 16px;
   align-items: center;
-  min-height: 90px;
+  min-height: 72px;
   border-bottom: 1px solid #dce5ef;
-  padding: 12px 34px;
+  padding: 10px 28px;
   background: #ffffff;
 }
 
 .workspace-title {
   color: #08213c;
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   font-weight: 900;
   text-decoration: none;
 }
@@ -1885,8 +1885,8 @@ tbody tr:hover {
   align-items: center;
   gap: 4px;
   border: 1px solid #dce5ef;
-  border-radius: 16px;
-  padding: 6px;
+  border-radius: 12px;
+  padding: 4px;
   background: #f4f7fb;
 }
 
@@ -1894,9 +1894,9 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 52px;
-  border-radius: 12px;
-  padding: 0 24px;
+  min-height: 42px;
+  border-radius: 9px;
+  padding: 0 18px;
   color: #506383;
   font-weight: 900;
   text-decoration: none;
@@ -1922,19 +1922,20 @@ tbody tr:hover {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px;
 }
 
 .workspace-status span,
 .workspace-status button {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 38px;
   border: 1px solid #dce5ef;
   border-radius: 999px;
-  padding: 0 16px;
+  padding: 0 14px;
   background: #ffffff;
   color: #506383;
+  font-size: 0.86rem;
   font-weight: 800;
 }
 
@@ -1948,16 +1949,16 @@ tbody tr:hover {
 }
 
 .workspace-main {
-  width: min(1720px, 100%);
+  width: min(1480px, 100%);
   margin: 0 auto;
-  padding: 32px 38px 70px;
+  padding: 26px 28px 56px;
 }
 
 .pipeline-flow {
   position: relative;
   overflow: hidden;
-  border-radius: 22px;
-  padding: 36px;
+  border-radius: 16px;
+  padding: 26px;
   background: #1d304b;
   color: #ffffff;
 }
@@ -1970,10 +1971,10 @@ tbody tr:hover {
 .agent-recommendation::after {
   content: "";
   position: absolute;
-  right: -70px;
-  top: -90px;
-  width: 300px;
-  height: 300px;
+  right: -56px;
+  top: -74px;
+  width: 230px;
+  height: 230px;
   border-radius: 999px;
   background: rgba(242, 106, 5, 0.13);
 }
@@ -1981,12 +1982,12 @@ tbody tr:hover {
 .flow-head {
   display: flex;
   align-items: baseline;
-  gap: 14px;
-  margin-bottom: 30px;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .flow-head h1 {
-  font-size: 1.35rem;
+  font-size: 1.12rem;
 }
 
 .flow-head p,
@@ -1999,17 +2000,17 @@ tbody tr:hover {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr) 54px minmax(0, 1fr) 54px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
 }
 
 .flow-steps article {
   min-width: 0;
-  min-height: 172px;
+  min-height: 128px;
   border: 1px solid rgba(188, 211, 239, 0.18);
-  border-radius: 18px;
-  padding: 26px;
+  border-radius: 14px;
+  padding: 20px;
   background: rgba(255, 255, 255, 0.07);
 }
 
@@ -2020,7 +2021,7 @@ tbody tr:hover {
 
 .flow-steps span {
   color: #a9c8ef;
-  font-size: 0.86rem;
+  font-size: 0.74rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2028,13 +2029,14 @@ tbody tr:hover {
 
 .flow-steps article > strong {
   display: block;
-  margin-top: 22px;
-  font-size: clamp(2.2rem, 4vw, 3.3rem);
+  margin-top: 16px;
+  font-size: clamp(2rem, 3.1vw, 2.75rem);
   line-height: 1;
 }
 
 .flow-steps p {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
+  font-size: 0.84rem;
   font-weight: 800;
 }
 
@@ -2048,9 +2050,9 @@ tbody tr:hover {
 
 .flow-rate strong {
   display: block;
-  max-width: 54px;
+  max-width: 42px;
   color: #ffffff;
-  font-size: 1.45rem;
+  font-size: 1.12rem;
   line-height: 1;
   text-align: center;
 }
@@ -2064,9 +2066,10 @@ tbody tr:hover {
 .lifecycle-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 9px;
   align-items: center;
-  margin-top: 26px;
+  margin-top: 20px;
+  font-size: 0.84rem;
   font-weight: 800;
 }
 
@@ -2094,24 +2097,24 @@ tbody tr:hover {
 
 .pipeline-controls,
 .data-discovery-grid {
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .pipeline-controls {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.9fr) minmax(180px, 0.75fr) minmax(160px, 0.75fr) auto auto auto auto;
-  gap: 16px;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.9fr) minmax(170px, 0.7fr) minmax(150px, 0.65fr) auto auto auto auto;
+  gap: 12px;
   align-items: end;
   border: 1px solid #dce5ef;
-  border-radius: 18px;
-  padding: 22px;
+  border-radius: 14px;
+  padding: 18px;
   background: #ffffff;
   box-shadow: 0 16px 42px rgba(29, 48, 75, 0.08);
 }
 
 .pipeline-controls h2 {
   margin-top: 5px;
-  font-size: 1.18rem;
+  font-size: 1rem;
 }
 
 .pipeline-controls label {
@@ -2122,22 +2125,22 @@ tbody tr:hover {
 }
 
 .pipeline-controls input {
-  min-height: 52px;
+  min-height: 46px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #eaf0f6;
   color: #10243d;
   font-weight: 900;
 }
 
 .pipeline-controls #runResearchButton {
-  min-height: 52px;
-  border-radius: 12px;
+  min-height: 46px;
+  border-radius: 10px;
   background: #f26a05;
 }
 
 .pipeline-controls .status-pill {
-  min-height: 42px;
+  min-height: 38px;
   background: #eaf0f6;
   color: #1d304b;
 }
