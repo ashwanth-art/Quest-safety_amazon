@@ -12,6 +12,12 @@ const DASHBOARD_MONTHS = [
   { value: 4, label: "Apr" },
   { value: 5, label: "May" },
   { value: 6, label: "Jun" },
+  { value: 7, label: "Jul" },
+  { value: 8, label: "Aug" },
+  { value: 9, label: "Sep" },
+  { value: 10, label: "Oct" },
+  { value: 11, label: "Nov" },
+  { value: 12, label: "Dec" },
 ];
 
 initDashboard();
@@ -27,6 +33,13 @@ async function initDashboard() {
 function bindDashboardFilters() {
   document.querySelector("#dashboardYear")?.addEventListener("change", (event) => {
     dashboardState.year = Number(event.target.value || 2026);
+    syncMonthOptions();
+    const maxMonth = maxMonthForYear(dashboardState.year);
+    dashboardState.month = maxMonth;
+    const monthSelect = document.querySelector("#dashboardMonth");
+    if (monthSelect) {
+      monthSelect.value = String(maxMonth);
+    }
     renderDashboard();
   });
 
@@ -47,11 +60,33 @@ function bindDashboardFilters() {
     });
     renderDashboard();
   });
+
+  syncMonthOptions();
+}
+
+function syncMonthOptions() {
+  const monthSelect = document.querySelector("#dashboardMonth");
+  if (!monthSelect) {
+    return;
+  }
+
+  const maxMonth = maxMonthForYear(dashboardState.year);
+  Array.from(monthSelect.options).forEach((option) => {
+    const optionMonth = Number(option.value);
+    const allowed = optionMonth <= maxMonth;
+    option.hidden = !allowed;
+    option.disabled = !allowed;
+  });
+
+  if (Number(monthSelect.value) > maxMonth) {
+    monthSelect.value = String(maxMonth);
+    dashboardState.month = maxMonth;
+  }
 }
 
 function renderDashboard() {
   const rows = dashboardState.analysis?.results || [];
-  const approved = rows.filter((item) => item.decision?.action !== "HUMAN_REVIEW");
+  const approved = rows.filter((item) => isLiveListing(item));
   const filteredApproved = filterByRisk(approved);
   const hasRun = Boolean(dashboardState.analysis?.isReady);
   const year = dashboardState.year;
@@ -82,7 +117,7 @@ function renderDashboard() {
   setText("dashMargin", `${formatNumber(weightedMargin, 1)}%`);
   setText("dashMarginDelta", `${weightedMargin >= 20 ? "+" : ""}${formatNumber(weightedMargin - 20, 1)} pp vs 20% floor`);
   setText("reviewNavCount", rows.filter((item) => item.decision?.action === "HUMAN_REVIEW").length);
-  setText("dashboardTitleScope", `${year} year-to-date through ${monthLabel(month)} - refreshed from latest pipeline run`);
+  setText("dashboardTitleScope", `${year} through ${monthLabel(month)} - refreshed from latest pipeline run`);
 
   renderGrowthChart(filteredApproved, year, month);
   renderDashboardRisk(filteredApproved);
@@ -100,7 +135,7 @@ function filterByRisk(rows) {
 }
 
 function renderGrowthChart(approved, year, selectedMonth) {
-  const months = DASHBOARD_MONTHS.filter((item) => item.value <= selectedMonth);
+  const months = DASHBOARD_MONTHS.filter((item) => item.value <= maxMonthForYear(year) && item.value <= selectedMonth);
   const series = months.map((month) => {
     return {
       label: month.label,
@@ -240,7 +275,7 @@ function polarToCartesian(cx, cy, radius, angleDegrees) {
 function renderTopProducts(approved, year, month) {
   const table = document.querySelector("#dashboardTopProducts");
   const rows = [...approved]
-    .sort((a, b) => ytdRevenue(b, year, month) - ytdRevenue(a, year, month))
+    .sort((a, b) => periodRevenue(b, year, month) - periodRevenue(a, year, month))
     .slice(0, 6);
 
   if (!rows.length) {
@@ -263,7 +298,7 @@ function renderTopProducts(approved, year, month) {
         <td><span class="risk-pill ${risk}">${titleCase(item.riskAnalysis?.level || "LOW")}</span></td>
         <td>${escapeHtml(approvalSource(item))}</td>
         <td class="${margin >= 20 ? "positive" : "negative"}">${formatNumber(margin, 1)}%</td>
-        <td>${formatCompactMoney(ytdRevenue(item, year, month))}</td>
+        <td>${formatCompactMoney(currentRevenue)}</td>
         <td class="${growth >= 0 ? "positive" : "negative"}">${growth >= 0 ? "+" : ""}${formatNumber(growth, 1)}%</td>
       </tr>
     `;
@@ -280,6 +315,13 @@ function approvalSource(item) {
   }
 
   return "Auto";
+}
+
+function isLiveListing(item) {
+  return (
+    item?.approvalStatus === "APPROVED_BY_USER" ||
+    ["PUSH_TO_AMAZON", "REPRICE_AND_PUSH"].includes(item?.decision?.action)
+  );
 }
 
 function weightedMarginPercent(rows, year, month) {
@@ -332,6 +374,10 @@ function previousPeriod(year, month) {
 
 function monthLabel(month) {
   return DASHBOARD_MONTHS.find((item) => item.value === Number(month))?.label || "Jan";
+}
+
+function maxMonthForYear(year) {
+  return Number(year) === 2025 ? 12 : 6;
 }
 
 function formatCompactMoney(value) {

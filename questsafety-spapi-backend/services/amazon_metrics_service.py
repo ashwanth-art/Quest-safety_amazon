@@ -10,6 +10,12 @@ FORECAST_MONTHS = [
     {"value": 4, "label": "Apr"},
     {"value": 5, "label": "May"},
     {"value": 6, "label": "Jun"},
+    {"value": 7, "label": "Jul"},
+    {"value": 8, "label": "Aug"},
+    {"value": 9, "label": "Sep"},
+    {"value": 10, "label": "Oct"},
+    {"value": 11, "label": "Nov"},
+    {"value": 12, "label": "Dec"},
 ]
 
 
@@ -20,7 +26,7 @@ def amazon_metrics_summary(
     risk_category: str = "all",
 ) -> Dict[str, Any]:
     year = _normalize_year(year)
-    month = _normalize_month(month)
+    month = _normalize_month(year, month)
     risk_category = (risk_category or "all").lower()
 
     research = get_current_analysis()
@@ -36,7 +42,7 @@ def amazon_metrics_summary(
     ]
     monthly_series = [
         _period_summary(filtered_products, year, month_item["value"])
-        for month_item in FORECAST_MONTHS
+        for month_item in _available_months(year)
     ]
 
     current_summary = _aggregate_rows(current_rows)
@@ -53,8 +59,8 @@ def amazon_metrics_summary(
             "riskCategory": risk_category,
         },
         "available": {
-            "years": [2026],
-            "months": FORECAST_MONTHS,
+            "years": [2025, 2026],
+            "months": _available_months(year),
             "riskCategories": ["all", "low", "medium", "high"],
             "skuCount": len(products),
         },
@@ -165,8 +171,8 @@ def _empty_summary(
             "riskCategory": risk_category,
         },
         "available": {
-            "years": [2026],
-            "months": FORECAST_MONTHS,
+            "years": [2025, 2026],
+            "months": _available_months(year),
             "riskCategories": ["all", "low", "medium", "high"],
             "skuCount": 0,
         },
@@ -187,7 +193,7 @@ def _empty_summary(
                 "marginPercent": 0,
                 "units": 0,
             }
-            for month_item in FORECAST_MONTHS
+            for month_item in _available_months(year)
         ],
         "riskCounts": {"low": 0, "medium": 0, "high": 0, "total": 0},
         "skuRows": [],
@@ -358,11 +364,19 @@ def _month_label(month: int) -> str:
 
 
 def _normalize_year(year: int) -> int:
-    return 2026
+    return 2025 if int(year or 2026) <= 2025 else 2026
 
 
-def _normalize_month(month: int) -> int:
-    return min(max(int(month or 6), 1), 6)
+def _normalize_month(year: int, month: int) -> int:
+    return min(max(int(month or 6), 1), _max_month_for_year(year))
+
+
+def _available_months(year: int) -> List[Dict[str, Any]]:
+    return [item for item in FORECAST_MONTHS if item["value"] <= _max_month_for_year(year)]
+
+
+def _max_month_for_year(year: int) -> int:
+    return 12 if int(year or 2026) <= 2025 else 6
 
 
 def _stable_int(seed: str, minimum: int, maximum: int) -> int:

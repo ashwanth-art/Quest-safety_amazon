@@ -434,11 +434,11 @@ input[type="range"] {
 }
 
 .card-metrics {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .studio-metrics {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .card-metrics strong,
@@ -981,6 +981,23 @@ tbody tr:hover {
   background: #ffffff;
   color: #ef5f00;
   font-weight: 900;
+}
+
+.review-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 6px 0 16px;
+}
+
+.review-action-row .ghost-orange {
+  min-width: 120px;
+}
+
+.table-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .active-filter-row {
@@ -1951,7 +1968,7 @@ tbody tr:hover {
 .workspace-main {
   width: min(1480px, 100%);
   margin: 0 auto;
-  padding: 26px 28px 56px;
+  padding: 34px 28px 56px;
 }
 
 .pipeline-flow {

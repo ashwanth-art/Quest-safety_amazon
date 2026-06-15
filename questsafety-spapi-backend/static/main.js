@@ -180,7 +180,7 @@ function renderPipelineStats(analysis) {
   const metadata = analysis.metadata || {};
   const discovered = metadata.productCount || rows.length;
   const marginQualified = rows.filter((item) => item.criteria?.margin?.passed).length;
-  const approved = rows.filter((item) => item.decision?.action !== "HUMAN_REVIEW").length;
+  const approved = rows.filter((item) => isLiveListing(item)).length;
   const high = rows.filter((item) => item.riskAnalysis?.level === "HIGH").length;
   const medium = rows.filter((item) => item.riskAnalysis?.level === "MEDIUM").length;
   const low = rows.filter((item) => item.riskAnalysis?.level === "LOW").length;
@@ -234,7 +234,7 @@ function renderQueue(rows) {
 
   productQueue.innerHTML = rows.map((item) => {
     const decision = item.decision || {};
-    const isPush = decision.action !== "HUMAN_REVIEW";
+    const isPush = isLiveListing(item);
     const isSelected = item.recordId === mainState.selectedRecordId;
 
     return `
@@ -253,6 +253,7 @@ function renderQueue(rows) {
         <div class="score-bar"><span style="width:${Math.min(Math.max(item.researchScore || 0, 0), 100)}%"></span></div>
         <div class="card-metrics">
           <div><span class="metric-label">Score</span><strong>${formatInteger(item.researchScore || 0)}/100</strong></div>
+          <div><span class="metric-label">Cost</span><strong>${formatMoney(item.Cost || economicsCost(item) || 0)}</strong></div>
           <div><span class="metric-label">Revenue</span><strong>${formatMoney(item.monthlyRevenue || 0)}</strong></div>
           <div><span class="metric-label">Margin</span><strong>${formatNumber(item.economics?.contributionMarginPercent || 0, 1)}%</strong></div>
           <div><span class="metric-label">Risk</span><strong>${escapeHtml(item.riskAnalysis?.level || "-")}</strong></div>
@@ -279,7 +280,7 @@ function renderStudio(item) {
   }
 
   const decision = item.decision || {};
-  const isPush = decision.action !== "HUMAN_REVIEW";
+  const isPush = isLiveListing(item);
   const economics = item.economics || {};
   const pricing = item.pricingBasis || {};
   const push = item.pushRecommendation || {};
@@ -303,9 +304,9 @@ function renderStudio(item) {
 
     <section class="studio-metrics">
       <div><span class="metric-label">Monthly revenue</span><strong>${formatMoney(item.monthlyRevenue || 0)}</strong></div>
+      <div><span class="metric-label">Cost</span><strong>${formatMoney(item.Cost || economics.Cost || 0)}</strong></div>
       <div><span class="metric-label">Recommended price</span><strong>${formatMoney(item.recommendedAmazonPrice || 0)}</strong></div>
       <div><span class="metric-label">Margin</span><strong>${formatNumber(economics.contributionMarginPercent || 0, 1)}%</strong></div>
-      <div><span class="metric-label">Units</span><strong>${formatInteger(item.monthlyUnits || 0)}</strong></div>
       <div><span class="metric-label">Risk</span><strong><span class="risk-pill ${String(item.riskAnalysis?.level || "").toLowerCase()}">${escapeHtml(item.riskAnalysis?.level || "-")}</span></strong></div>
     </section>
 
@@ -389,10 +390,20 @@ function renderCompetitors(competitors) {
       </div>
       <div class="price-stack">
         <strong>${formatMoney(competitor.estimatedPrice || 0)}</strong>
-        <span>${formatMoney(competitor.estimatedMonthlyRevenue || 0)}</span>
       </div>
     </li>
   `).join("");
+}
+
+function economicsCost(item) {
+  return Number(item?.economics?.Cost || 0);
+}
+
+function isLiveListing(item) {
+  return (
+    item?.approvalStatus === "APPROVED_BY_USER" ||
+    ["PUSH_TO_AMAZON", "REPRICE_AND_PUSH"].includes(item?.decision?.action)
+  );
 }
 
 function renderRiskFactors(factors) {

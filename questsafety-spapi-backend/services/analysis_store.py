@@ -5,6 +5,7 @@ from services.research_service import analyze_research_catalog
 
 
 _CURRENT_ANALYSIS: Optional[Dict[str, Any]] = None
+LIVE_ACTIONS = {"PUSH_TO_AMAZON", "REPRICE_AND_PUSH"}
 
 
 def run_current_analysis(
@@ -80,6 +81,47 @@ def approve_current_items(record_ids: List[str]) -> Dict[str, Any]:
     return _CURRENT_ANALYSIS
 
 
+def reject_current_items(record_ids: List[str]) -> Dict[str, Any]:
+    if _CURRENT_ANALYSIS is None:
+        return current_analysis_response()
+
+    selected_ids = {str(record_id) for record_id in record_ids}
+    rejected_ids = []
+
+    for item in _CURRENT_ANALYSIS.get("results", []):
+        if str(item.get("recordId")) not in selected_ids:
+            continue
+
+        item["approvalStatus"] = "REJECTED_BY_USER"
+        item["decision"] = {
+            "action": "REJECTED_BY_USER",
+            "label": "Rejected",
+            "reason": "User rejected this SKU from the Review queue.",
+        }
+        push = item.setdefault("pushRecommendation", {})
+        push.update(
+            {
+                "action": "NO_OP",
+                "status": "REJECTED",
+                "priceAction": "Do not push",
+                "message": "Rejected from Review. No Amazon payload should be sent.",
+                "sku": item.get("sku"),
+                "asin": item.get("asin"),
+                "recommendedPrice": item.get("recommendedAmazonPrice", 0),
+                "riskLevel": item.get("riskAnalysis", {}).get("level"),
+                "nextSteps": [
+                    "Hold the SKU back from Amazon listing changes.",
+                    "Revisit margin, demand, or competitor fit in a later run.",
+                ],
+            }
+        )
+        rejected_ids.append(str(item.get("recordId")))
+
+    _CURRENT_ANALYSIS["summary"] = _summary_for(_CURRENT_ANALYSIS.get("results", []))
+    _CURRENT_ANALYSIS["rejectedRecordIds"] = rejected_ids
+    return _CURRENT_ANALYSIS
+
+
 def current_analysis_response() -> Dict[str, Any]:
     if _CURRENT_ANALYSIS is None:
         return {
@@ -94,7 +136,7 @@ def _summary_for(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     push_count = sum(
         1
         for item in results
-        if item.get("decision", {}).get("action") != "HUMAN_REVIEW"
+        if _is_live_listing(item)
     )
     total_revenue = round(sum(_number(item.get("monthlyRevenue", 0)) for item in results), 2)
     weighted_margin = (
@@ -127,6 +169,13 @@ def _summary_for(results: List[Dict[str, Any]]) -> Dict[str, Any]:
         "weightedMarginPercent": weighted_margin,
         "totalEstimatedMonthlyRevenue": total_revenue,
     }
+
+
+def _is_live_listing(item: Dict[str, Any]) -> bool:
+    return (
+        item.get("approvalStatus") == "APPROVED_BY_USER"
+        or item.get("decision", {}).get("action") in LIVE_ACTIONS
+    )
 
 
 def _number(value: Any) -> float:

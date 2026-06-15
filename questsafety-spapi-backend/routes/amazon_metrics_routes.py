@@ -11,8 +11,8 @@ router = APIRouter(prefix="/api/amazon-metrics", tags=["Amazon Metrics"])
 
 class MetricsSummaryRequest(BaseModel):
     query: Optional[str] = None
-    year: int = Field(default=2026, ge=2026, le=2026)
-    month: int = Field(default=7, ge=1, le=12)
+    year: int = Field(default=2026, ge=2025, le=2026)
+    month: int = Field(default=6, ge=1, le=12)
     riskCategory: str = "all"
 
 

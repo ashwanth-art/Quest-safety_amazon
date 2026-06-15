@@ -8,6 +8,7 @@ from services.analysis_store import (
     clear_current_analysis,
     current_analysis_response,
     run_current_analysis,
+    reject_current_items,
 )
 
 
@@ -22,6 +23,10 @@ class ResearchAnalyzeRequest(BaseModel):
 
 
 class ResearchApproveRequest(BaseModel):
+    recordIds: list[str] = Field(default_factory=list)
+
+
+class ResearchRejectRequest(BaseModel):
     recordIds: list[str] = Field(default_factory=list)
 
 
@@ -66,3 +71,8 @@ def research_clear():
 @router.post("/approve")
 def research_approve(payload: ResearchApproveRequest):
     return approve_current_items(payload.recordIds)
+
+
+@router.post("/reject")
+def research_reject(payload: ResearchRejectRequest):
+    return reject_current_items(payload.recordIds)

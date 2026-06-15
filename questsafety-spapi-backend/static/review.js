@@ -58,10 +58,17 @@ function bindReviewTabs() {
 
   document.querySelector("#clearMediumSelection").addEventListener("click", () => {
     reviewState.selectedMediumIds.clear();
+    setSelectAllState(false);
     renderMediumBatch(mediumRiskRows());
   });
 
   document.querySelector("#approveMediumSelection").addEventListener("click", approveSelectedMedium);
+  document.querySelector("#mediumSelectAll").addEventListener("change", (event) => {
+    toggleSelectAll(event.target.checked);
+  });
+
+  document.querySelector("#approveHighRisk").addEventListener("click", approveSelectedHigh);
+  document.querySelector("#rejectHighRisk").addEventListener("click", rejectSelectedHigh);
 }
 
 async function loadReviewAnalysis() {
@@ -95,6 +102,10 @@ function renderReview() {
   setText("highQueueCount", high.length);
   syncSelectedMediumIds(medium);
   setText("mediumSelectedCount", `${reviewState.selectedMediumIds.size} selected`);
+  setSelectAllState(
+    medium.length > 0 && reviewState.selectedMediumIds.size === medium.length,
+    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < medium.length
+  );
 
   highPanel.hidden = !hasRun || reviewState.activeTab !== "high";
   mediumPanel.hidden = !hasRun || reviewState.activeTab !== "medium";
@@ -159,7 +170,6 @@ function renderHighRisk() {
         <p>${escapeHtml(selected.sku || "-")} - ${escapeHtml(selected.category || "Uncategorized")} - Discovered in latest run</p>
         <div class="tag-row">
           <span class="tag">Risk ${escapeHtml(selected.riskAnalysis?.level || "-")}</span>
-          <span class="tag">${formatInteger(selected.competitors?.length || 0)} competing sellers</span>
           <span class="tag">Demand ${selected.monthlyRevenue >= 2000 ? "Clear" : "Review"}</span>
         </div>
       </div>
@@ -197,7 +207,6 @@ function renderHighRisk() {
           <div><dt>Recommended price</dt><dd>${formatMoney(selected.recommendedAmazonPrice || 0)}</dd></div>
           <div><dt>Projected margin</dt><dd>${formatNumber(selected.economics?.contributionMarginPercent || 0, 1)}%</dd></div>
           <div><dt>Monthly revenue</dt><dd>${formatMoney(selected.monthlyRevenue || 0)}</dd></div>
-          <div><dt>Estimated units</dt><dd>${formatInteger(selected.monthlyUnits || 0)}</dd></div>
         </dl>
       </article>
       <article>
@@ -237,6 +246,10 @@ function renderMediumBatch(rows) {
   }).join("");
 
   setText("mediumSelectedCount", `${reviewState.selectedMediumIds.size} selected`);
+  setSelectAllState(
+    rows.length > 0 && reviewState.selectedMediumIds.size === rows.length,
+    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < rows.length
+  );
 }
 
 function renderDecisionHistory(rows) {
@@ -270,6 +283,14 @@ function historyAction(item) {
     };
   }
 
+  if (item.approvalStatus === "REJECTED_BY_USER" || item.decision?.action === "REJECTED_BY_USER") {
+    return {
+      className: "rejected-icon",
+      icon: "X",
+      label: "Rejected by human",
+    };
+  }
+
   if (item.decision?.action !== "HUMAN_REVIEW") {
     return {
       className: "approved-icon",
@@ -299,6 +320,10 @@ function setMediumSelected(recordId, isSelected) {
   } else {
     reviewState.selectedMediumIds.delete(recordId);
   }
+  setSelectAllState(
+    mediumRiskRows().length > 0 && reviewState.selectedMediumIds.size === mediumRiskRows().length,
+    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < mediumRiskRows().length
+  );
   renderMediumBatch(mediumRiskRows());
 }
 
@@ -343,6 +368,67 @@ async function approveSelectedMedium() {
   } finally {
     button.disabled = false;
     button.textContent = "Approve selected";
+  }
+}
+
+async function approveSelectedHigh() {
+  const recordId = reviewState.selectedRecordId;
+  if (!recordId) {
+    return;
+  }
+
+  try {
+    await reviewAction("/api/research/approve", [recordId]);
+  } catch (error) {
+    document.querySelector("#reviewReason").textContent = error.message || "Approval failed.";
+  }
+}
+
+async function rejectSelectedHigh() {
+  const recordId = reviewState.selectedRecordId;
+  if (!recordId) {
+    return;
+  }
+
+  try {
+    await reviewAction("/api/research/reject", [recordId]);
+  } catch (error) {
+    document.querySelector("#reviewReason").textContent = error.message || "Rejection failed.";
+  }
+}
+
+async function reviewAction(url, recordIds) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ recordIds }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Review action failed");
+  }
+
+  const data = await response.json();
+  reviewState.analysis = data.isReady ? data : null;
+  reviewState.selectedRecordId = highRiskRows()[0]?.recordId || null;
+  reviewState.selectedMediumIds = new Set(mediumRiskRows().map((item) => item.recordId));
+  document.dispatchEvent(new CustomEvent("analysis:updated"));
+  renderReview();
+}
+
+function toggleSelectAll(isSelected) {
+  const rows = mediumRiskRows();
+  reviewState.selectedMediumIds = isSelected
+    ? new Set(rows.map((item) => item.recordId))
+    : new Set();
+  renderMediumBatch(rows);
+}
+
+function setSelectAllState(isChecked, isPartial = false) {
+  const checkbox = document.querySelector("#mediumSelectAll");
+  if (checkbox) {
+    checkbox.checked = Boolean(isChecked);
+    checkbox.indeterminate = Boolean(isPartial);
   }
 }
 

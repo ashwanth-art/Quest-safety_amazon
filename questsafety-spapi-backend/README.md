@@ -64,6 +64,13 @@ Why these gates exist:
 - FBA competitiveness checks whether Quest can compete against the lowest FBA offer after fees.
 - Risk analysis prevents risky products from being auto-pushed when category, margin, or match confidence needs human review.
 
+Why the fee math is iterative:
+
+- Amazon referral fee depends on the final selling price.
+- Estimated FBA fee also depends on the final selling price.
+- That makes the recommendation equation circular.
+- The backend solves the price first, then uses the final price to show the referral fee and FBA fee breakdown.
+
 ## Fee Assumptions
 
 The sandbox files do not include a full Amazon fee table, so the MVP estimates fees:
@@ -92,6 +99,7 @@ recommended price =
 ```
 
 Because FBA fee depends on recommended price, the backend iterates until the price and fee are stable.
+The price is not guessed from the final fee; the two values settle together until the formula is stable.
 
 Then the backend compares the recommended price against the lowest FBA competitor:
 
@@ -152,7 +160,7 @@ Scan cadence = Daily
 
 ```text
 Products analyzed = total results in latest run
-Push candidates = decision.action != HUMAN_REVIEW
+Push candidates = decision.action in PUSH_TO_AMAZON or REPRICE_AND_PUSH, or approvalStatus == APPROVED_BY_USER
 Monthly revenue = sum(monthlyRevenue for all analyzed products)
 Weighted margin =
   sum(monthlyRevenue * contributionMarginPercent)
@@ -274,7 +282,7 @@ rejected because margin is below floor
 Dashboard uses approved products from the latest Pipeline run.
 
 ```text
-Approved product = decision.action != HUMAN_REVIEW
+Approved product = decision.action in PUSH_TO_AMAZON or REPRICE_AND_PUSH, or approvalStatus == APPROVED_BY_USER
 ```
 
 ### KPI Cards
@@ -288,7 +296,7 @@ count(approved products)
 Revenue YTD:
 
 ```text
-approved monthly run-rate * 6
+sum of approved monthly revenue for the selected dashboard scope
 ```
 
 Revenue growth:
@@ -313,7 +321,7 @@ sum(approved monthlyRevenue)
 Why:
 
 - Products live measures catalogue progress.
-- Revenue YTD estimates year-to-date Amazon impact.
+- Revenue YTD estimates the approved catalogue impact for the selected year/month scope.
 - Growth gives a simple trend signal.
 - Blended margin checks whether the approved catalogue is profitable after weighting by revenue.
 
@@ -326,7 +334,12 @@ monthly revenue trend = approved monthly run-rate * month factor
 products live trend = approved product count * month factor
 ```
 
-Month factors create a Jan-to-Jun progression. The SVG chart uses a fixed visual axis:
+Month factors create a Jan-to-selected-month progression. In this MVP:
+
+- 2025 can display all 12 months.
+- 2026 shows data through June only.
+
+The SVG chart uses a fixed visual axis:
 
 ```text
 Revenue axis = $0K to $300K
@@ -358,8 +371,8 @@ Why:
 ### Top-Performing Added Products
 
 ```text
-rows = approved products sorted by monthlyRevenue descending
-Revenue YTD per row = monthlyRevenue * 6
+rows = approved products sorted by selected-month revenue descending
+Revenue per row = approved monthly revenue for the selected month
 Growth = sandbox trend based on research score
 Approved via =
   Review if approvalStatus == APPROVED_BY_USER
@@ -369,7 +382,7 @@ Approved via =
 
 Why:
 
-- It shows which approved SKUs are expected to drive the most Amazon revenue.
+- It shows which approved SKUs are driving the most Amazon revenue in the selected month.
 
 ## Worked SKU Example
 
@@ -404,6 +417,14 @@ FBA fee = min(max(recommended price * 8%, 4.35), 18.00)
 FBA fee = min(max($57.98 * 0.08, 4.35), 18.00)
 FBA fee = min(max($4.64, $4.35), $18.00)
 FBA fee = $4.64
+```
+
+Step 2b: Why this is iterative.
+
+```text
+If the price changes, referral fee changes.
+If the price changes, FBA fee changes too.
+So the backend solves a stable recommended price first, then reports the final fee breakdown.
 ```
 
 Step 3: Add prep cost.
@@ -466,6 +487,17 @@ Reason = revenue, margin, FBA competitiveness, and risk checks pass
 ```
 
 This SKU is recommended because it can be priced below the lowest FBA competitor while still keeping margin above the 20% requirement.
+
+Short version of the math:
+
+```text
+1. Start with Quest cost.
+2. Add prep and estimated FBA.
+3. Solve for a price that leaves the target margin.
+4. Recompute referral and FBA from that price.
+5. Compare against the lowest FBA competitor.
+6. If revenue, margin, and risk pass, push or reprice.
+```
 
 ## API Endpoints
 
