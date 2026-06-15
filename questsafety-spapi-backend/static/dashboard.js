@@ -1,20 +1,67 @@
 const dashboardState = {
   analysis: null,
+  year: 2026,
+  month: 6,
+  risk: "all",
 };
+
+const DASHBOARD_MONTHS = [
+  { value: 1, label: "Jan" },
+  { value: 2, label: "Feb" },
+  { value: 3, label: "Mar" },
+  { value: 4, label: "Apr" },
+  { value: 5, label: "May" },
+  { value: 6, label: "Jun" },
+  { value: 7, label: "Jul" },
+  { value: 8, label: "Aug" },
+  { value: 9, label: "Sep" },
+  { value: 10, label: "Oct" },
+  { value: 11, label: "Nov" },
+  { value: 12, label: "Dec" },
+];
 
 initDashboard();
 
 async function initDashboard() {
+  bindDashboardFilters();
   const response = await fetch("/api/research/current");
   const data = await response.json();
   dashboardState.analysis = data.isReady ? data : null;
   renderDashboard();
 }
 
+function bindDashboardFilters() {
+  document.querySelector("#dashboardYear")?.addEventListener("change", (event) => {
+    dashboardState.year = Number(event.target.value || 2026);
+    renderDashboard();
+  });
+
+  document.querySelector("#dashboardMonth")?.addEventListener("change", (event) => {
+    dashboardState.month = Number(event.target.value || 6);
+    renderDashboard();
+  });
+
+  document.querySelector(".dashboard-risk-filter")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-dashboard-risk]");
+    if (!button) {
+      return;
+    }
+
+    dashboardState.risk = button.dataset.dashboardRisk || "all";
+    document.querySelectorAll("[data-dashboard-risk]").forEach((item) => {
+      item.classList.toggle("is-active", item === button);
+    });
+    renderDashboard();
+  });
+}
+
 function renderDashboard() {
   const rows = dashboardState.analysis?.results || [];
   const approved = rows.filter((item) => item.decision?.action !== "HUMAN_REVIEW");
+  const filteredApproved = filterByRisk(approved);
   const hasRun = Boolean(dashboardState.analysis?.isReady);
+  const year = dashboardState.year;
+  const month = dashboardState.month;
 
   document.querySelector("#dashboardEmpty").hidden = hasRun;
   document.querySelector("#dashboardContent").hidden = !hasRun;
@@ -23,45 +70,52 @@ function renderDashboard() {
     return;
   }
 
-  const live = approved.length;
-  const monthlyRunRate = approved.reduce((sum, item) => sum + Number(item.monthlyRevenue || 0), 0);
-  const revenueYtd = monthlyRunRate * 6;
-  const weightedMargin = weightedMarginPercent(approved);
-  const priorMonthRevenue = monthlyRunRate * 0.955;
+  const live = periodLiveCount(filteredApproved.length, year, month);
+  const monthlyRunRate = filteredApproved.reduce((sum, item) => sum + periodRevenue(item, year, month), 0);
+  const revenueYtd = filteredApproved.reduce((sum, item) => sum + ytdRevenue(item, year, month), 0);
+  const weightedMargin = weightedMarginPercent(filteredApproved, year, month);
+  const [priorYear, priorMonth] = previousPeriod(year, month);
+  const priorMonthRevenue = filteredApproved.reduce((sum, item) => sum + periodRevenue(item, priorYear, priorMonth), 0);
   const growth = priorMonthRevenue ? ((monthlyRunRate - priorMonthRevenue) / priorMonthRevenue) * 100 : 0;
-  const addedThisMonth = Math.max(0, Math.round(live * 0.08));
+  const addedThisMonth = Math.max(0, live - periodLiveCount(filteredApproved.length, priorYear, priorMonth));
 
   setText("dashProductsLive", formatInteger(live));
   setText("dashAddedMonth", `+${formatInteger(addedThisMonth)} added this month`);
   setText("dashRevenueYtd", formatCompactMoney(revenueYtd));
   setText("dashRunRate", `${formatCompactMoney(monthlyRunRate)}/mo run-rate`);
   setText("dashGrowth", `${growth >= 0 ? "+" : ""}${formatNumber(growth, 1)}%`);
+  setText("dashGrowthPeriod", `${monthLabel(month)} ${year} vs ${monthLabel(priorMonth)} ${priorYear}`);
   setText("dashMargin", `${formatNumber(weightedMargin, 1)}%`);
   setText("dashMarginDelta", `${weightedMargin >= 20 ? "+" : ""}${formatNumber(weightedMargin - 20, 1)} pp vs 20% floor`);
   setText("reviewNavCount", rows.filter((item) => item.decision?.action === "HUMAN_REVIEW").length);
+  setText("dashboardTitleScope", `${year} year-to-date through ${monthLabel(month)} - refreshed from latest pipeline run`);
 
-  renderGrowthChart(approved, monthlyRunRate, live);
-  renderDashboardRisk(approved);
-  renderTopProducts(approved);
+  renderGrowthChart(filteredApproved, year, month);
+  renderDashboardRisk(filteredApproved);
+  renderTopProducts(filteredApproved, year, month);
 }
 
-function renderGrowthChart(approved, monthlyRunRate, live) {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-  const series = months.map((label, index) => {
-    const factor = 0.62 + index * 0.074;
+function filterByRisk(rows) {
+  if (dashboardState.risk === "all") {
+    return rows;
+  }
+
+  return rows.filter((item) => {
+    return String(item.riskAnalysis?.level || "").toLowerCase() === dashboardState.risk;
+  });
+}
+
+function renderGrowthChart(approved, year, selectedMonth) {
+  const months = DASHBOARD_MONTHS.filter((item) => item.value <= selectedMonth);
+  const series = months.map((month) => {
     return {
-      label,
-      revenue: monthlyRunRate * factor,
-      live: Math.round(live * (0.68 + index * 0.064)),
+      label: month.label,
+      revenue: approved.reduce((sum, item) => sum + periodRevenue(item, year, month.value), 0),
+      live: periodLiveCount(approved.length, year, month.value),
     };
   });
   const rawMaxRevenue = Math.max(...series.map((item) => item.revenue), 1);
   const rawMaxLive = Math.max(...series.map((item) => item.live), 1);
-  const visualSeries = series.map((item) => ({
-    ...item,
-    revenue: item.revenue * (280000 / rawMaxRevenue),
-    live: item.live * (840 / rawMaxLive),
-  }));
   const width = 900;
   const height = 360;
   const left = 92;
@@ -71,13 +125,13 @@ function renderGrowthChart(approved, monthlyRunRate, live) {
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const baseline = top + plotHeight;
-  const maxRevenue = 300000;
-  const maxLive = 900;
+  const maxRevenue = Math.max(50000, Math.ceil(rawMaxRevenue / 50000) * 50000);
+  const maxLive = Math.max(10, Math.ceil(rawMaxLive / 10) * 10);
   const revenueTicks = Array.from({ length: 7 }, (_, index) => maxRevenue - (maxRevenue / 6) * index);
-  const liveTicks = Array.from({ length: 10 }, (_, index) => maxLive - (maxLive / 9) * index);
-  const barWidth = 66;
-  const slot = plotWidth / visualSeries.length;
-  const points = visualSeries.map((item, index) => {
+  const liveTicks = Array.from({ length: 6 }, (_, index) => maxLive - (maxLive / 5) * index);
+  const barWidth = Math.min(66, Math.max(34, plotWidth / Math.max(series.length, 1) * 0.46));
+  const slot = plotWidth / Math.max(series.length, 1);
+  const points = series.map((item, index) => {
     const x = left + slot * index + slot / 2;
     const y = baseline - (item.live / maxLive) * plotHeight;
     return { x, y };
@@ -97,7 +151,7 @@ function renderGrowthChart(approved, monthlyRunRate, live) {
         return `<text class="chart-axis-label right" x="${width - right + 16}" y="${y + 5}">${formatInteger(value)}</text>`;
       }).join("")}
       <line class="chart-baseline" x1="${left}" y1="${baseline}" x2="${width - right}" y2="${baseline}"></line>
-      ${visualSeries.map((item, index) => {
+      ${series.map((item, index) => {
         const x = left + slot * index + slot / 2;
         const barHeight = Math.max(10, (item.revenue / maxRevenue) * plotHeight);
         const y = baseline - barHeight;
@@ -189,21 +243,24 @@ function polarToCartesian(cx, cy, radius, angleDegrees) {
   };
 }
 
-function renderTopProducts(approved) {
+function renderTopProducts(approved, year, month) {
   const table = document.querySelector("#dashboardTopProducts");
   const rows = [...approved]
-    .sort((a, b) => Number(b.monthlyRevenue || 0) - Number(a.monthlyRevenue || 0))
+    .sort((a, b) => ytdRevenue(b, year, month) - ytdRevenue(a, year, month))
     .slice(0, 6);
 
   if (!rows.length) {
-    table.innerHTML = '<tr><td colspan="7">Run the Pipeline and approve products to see top performers.</td></tr>';
+    table.innerHTML = '<tr><td colspan="7">No approved products match the selected dashboard filters.</td></tr>';
     return;
   }
 
   table.innerHTML = rows.map((item, index) => {
     const risk = String(item.riskAnalysis?.level || "LOW").toLowerCase();
-    const margin = Number(item.economics?.contributionMarginPercent || 0);
-    const growth = 7 + Math.max(0, Math.round((item.researchScore || 0) / 8)) - index;
+    const margin = periodMargin(item, year, month);
+    const [priorYear, priorMonth] = previousPeriod(year, month);
+    const currentRevenue = periodRevenue(item, year, month);
+    const previousRevenue = periodRevenue(item, priorYear, priorMonth);
+    const growth = previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
     return `
       <tr>
@@ -212,8 +269,8 @@ function renderTopProducts(approved) {
         <td><span class="risk-pill ${risk}">${titleCase(item.riskAnalysis?.level || "LOW")}</span></td>
         <td>${escapeHtml(approvalSource(item))}</td>
         <td class="${margin >= 20 ? "positive" : "negative"}">${formatNumber(margin, 1)}%</td>
-        <td>${formatCompactMoney(Number(item.monthlyRevenue || 0) * 6)}</td>
-        <td class="positive">+${formatNumber(Math.max(growth, 1), 0)}%</td>
+        <td>${formatCompactMoney(ytdRevenue(item, year, month))}</td>
+        <td class="${growth >= 0 ? "positive" : "negative"}">${growth >= 0 ? "+" : ""}${formatNumber(growth, 1)}%</td>
       </tr>
     `;
   }).join("");
@@ -231,15 +288,56 @@ function approvalSource(item) {
   return "Auto";
 }
 
-function weightedMarginPercent(rows) {
-  const revenue = rows.reduce((sum, item) => sum + Number(item.monthlyRevenue || 0), 0);
+function weightedMarginPercent(rows, year, month) {
+  const revenue = rows.reduce((sum, item) => sum + periodRevenue(item, year, month), 0);
   if (!revenue) {
     return 0;
   }
 
   return rows.reduce((sum, item) => {
-    return sum + Number(item.monthlyRevenue || 0) * Number(item.economics?.contributionMarginPercent || 0);
+    return sum + periodRevenue(item, year, month) * periodMargin(item, year, month);
   }, 0) / revenue;
+}
+
+function periodRevenue(item, year, month) {
+  return Number(item.monthlyRevenue || 0) * periodFactor(year, month);
+}
+
+function ytdRevenue(item, year, month) {
+  return DASHBOARD_MONTHS
+    .filter((period) => period.value <= month)
+    .reduce((sum, period) => sum + periodRevenue(item, year, period.value), 0);
+}
+
+function periodFactor(year, month) {
+  const monthRamp = 0.62 + (Number(month || 1) - 1) * 0.074;
+  const yearFactor = Number(year) === 2026 ? 1 : 0.86;
+  return Math.max(0.35, monthRamp * yearFactor);
+}
+
+function periodLiveCount(count, year, month) {
+  const monthFactor = Math.min(1, 0.68 + (Number(month || 1) - 1) * 0.064);
+  const yearFactor = Number(year) === 2026 ? 1 : 0.84;
+  return Math.round(Number(count || 0) * monthFactor * yearFactor);
+}
+
+function periodMargin(item, year, month) {
+  const baseMargin = Number(item.economics?.contributionMarginPercent || 0);
+  const monthMovement = (Number(month || 1) - 6) * 0.08;
+  const yearMovement = Number(year) === 2026 ? 0 : -0.6;
+  return Math.min(Math.max(baseMargin + monthMovement + yearMovement, 0), 60);
+}
+
+function previousPeriod(year, month) {
+  if (month > 1) {
+    return [year, month - 1];
+  }
+
+  return [year - 1, 12];
+}
+
+function monthLabel(month) {
+  return DASHBOARD_MONTHS.find((item) => item.value === Number(month))?.label || "Jan";
 }
 
 function formatCompactMoney(value) {

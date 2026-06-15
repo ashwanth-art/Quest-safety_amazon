@@ -2711,6 +2711,47 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.dashboard-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.25fr) minmax(180px, 0.3fr) minmax(320px, 1fr);
+  gap: 18px;
+  align-items: end;
+  margin-top: 22px;
+  border: 1px solid #dce5ef;
+  border-radius: 18px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(29, 48, 75, 0.08);
+}
+
+.dashboard-filter-panel label,
+.dashboard-filter-panel fieldset {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: #91a0b7;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-filter-panel select {
+  min-height: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: #eaf0f6;
+  color: #10243d;
+  font-weight: 900;
+}
+
+.dashboard-risk-filter {
+  width: fit-content;
+}
+
 .dashboard-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -2935,6 +2976,7 @@ tbody tr:hover {
   .flow-steps,
   .pipeline-controls,
   .data-discovery-grid,
+  .dashboard-filter-panel,
   .review-grid,
   .dashboard-kpis,
   .dashboard-grid {
