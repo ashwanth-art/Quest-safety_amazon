@@ -998,6 +998,10 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #3d557b;
 }
 
 .active-filter-row {
@@ -2602,6 +2606,11 @@ tbody tr:hover {
   background: transparent;
 }
 
+.review-table th.select-all-col,
+.review-table td:first-child {
+  width: 88px;
+}
+
 .review-table td {
   vertical-align: middle;
   font-size: 1rem;
@@ -2653,19 +2662,65 @@ tbody tr:hover {
 .row-check span {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border: 2px solid #cbd8e5;
-  border-radius: 9px;
+  border-radius: 7px;
   background: #ffffff;
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .row-check input:checked + span {
   border-color: #1f925b;
   background: #1f925b;
+}
+
+.row-check input:checked + span::after {
+  content: "✓";
+}
+
+.table-select-all input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.table-select-all span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-select-all span::before {
+  content: "";
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #cbd8e5;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.table-select-all input:checked + span::before {
+  border-color: #1f925b;
+  background: #1f925b;
+  content: "✓";
+}
+
+.table-select-all input:indeterminate + span::before {
+  border-color: #1f925b;
+  background: #e7f6ef;
+  content: "−";
+  color: #1f925b;
 }
 
 .batch-pill {
