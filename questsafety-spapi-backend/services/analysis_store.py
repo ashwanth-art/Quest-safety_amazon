@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from services.dashboard_export_service import export_dashboard_workbook
 from services.research_service import analyze_research_catalog
 
 
@@ -24,6 +25,7 @@ def run_current_analysis(
     analysis["isReady"] = True
     analysis["generatedAt"] = datetime.now(timezone.utc).isoformat()
     _CURRENT_ANALYSIS = analysis
+    export_dashboard_workbook(_CURRENT_ANALYSIS)
     return analysis
 
 
@@ -78,6 +80,7 @@ def approve_current_items(record_ids: List[str]) -> Dict[str, Any]:
 
     _CURRENT_ANALYSIS["summary"] = _summary_for(_CURRENT_ANALYSIS.get("results", []))
     _CURRENT_ANALYSIS["approvedRecordIds"] = approved_ids
+    export_dashboard_workbook(_CURRENT_ANALYSIS)
     return _CURRENT_ANALYSIS
 
 
@@ -119,6 +122,7 @@ def reject_current_items(record_ids: List[str]) -> Dict[str, Any]:
 
     _CURRENT_ANALYSIS["summary"] = _summary_for(_CURRENT_ANALYSIS.get("results", []))
     _CURRENT_ANALYSIS["rejectedRecordIds"] = rejected_ids
+    export_dashboard_workbook(_CURRENT_ANALYSIS)
     return _CURRENT_ANALYSIS
 
 

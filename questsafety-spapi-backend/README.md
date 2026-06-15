@@ -368,6 +368,28 @@ Why:
 
 - It shows whether the live catalogue is mostly low-risk or whether risky products are being pushed.
 
+### Dashboard Excel Export
+
+Every time the pipeline runs, or the Review page changes approval state, the current dashboard snapshot is saved automatically as an Excel file.
+
+Saved files live here:
+
+```text
+questsafety-spapi-backend/exports/dashboard_latest.xlsx
+```
+
+The app also keeps timestamped copies in the same folder:
+
+```text
+questsafety-spapi-backend/exports/dashboard_YYYYMMDD_HHMMSS.xlsx
+```
+
+What is inside the workbook:
+
+- `Summary` - selected filters, live counts, revenue, and weighted margin.
+- `Top Products` - the highest-revenue items in the current run.
+- `All Products` - the full current analysis output for the dashboard scope.
+
 ### Top-Performing Added Products
 
 ```text
