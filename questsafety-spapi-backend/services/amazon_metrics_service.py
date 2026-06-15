@@ -4,19 +4,19 @@ from services.analysis_store import get_current_analysis
 
 
 FORECAST_MONTHS = [
-    {"value": 7, "label": "Jul"},
-    {"value": 8, "label": "Aug"},
-    {"value": 9, "label": "Sep"},
-    {"value": 10, "label": "Oct"},
-    {"value": 11, "label": "Nov"},
-    {"value": 12, "label": "Dec"},
+    {"value": 1, "label": "Jan"},
+    {"value": 2, "label": "Feb"},
+    {"value": 3, "label": "Mar"},
+    {"value": 4, "label": "Apr"},
+    {"value": 5, "label": "May"},
+    {"value": 6, "label": "Jun"},
 ]
 
 
 def amazon_metrics_summary(
     query: Optional[str] = None,
     year: int = 2026,
-    month: int = 7,
+    month: int = 6,
     risk_category: str = "all",
 ) -> Dict[str, Any]:
     year = _normalize_year(year)
@@ -95,7 +95,7 @@ def amazon_metrics_answer(
     question: str,
     query: Optional[str] = None,
     year: int = 2026,
-    month: int = 7,
+    month: int = 6,
     risk_category: str = "all",
 ) -> Dict[str, str]:
     summary = amazon_metrics_summary(
@@ -354,7 +354,7 @@ def _previous_period(year: int, month: int) -> Tuple[int, int]:
 
 
 def _month_label(month: int) -> str:
-    return next((item["label"] for item in FORECAST_MONTHS if item["value"] == month), "Jul")
+    return next((item["label"] for item in FORECAST_MONTHS if item["value"] == month), "Jun")
 
 
 def _normalize_year(year: int) -> int:
@@ -362,7 +362,7 @@ def _normalize_year(year: int) -> int:
 
 
 def _normalize_month(month: int) -> int:
-    return min(max(int(month or 7), 7), 12)
+    return min(max(int(month or 6), 1), 6)
 
 
 def _stable_int(seed: str, minimum: int, maximum: int) -> int:
