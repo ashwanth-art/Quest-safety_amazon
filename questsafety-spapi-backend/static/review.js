@@ -47,13 +47,25 @@ function bindReviewTabs() {
       return;
     }
 
-    const recordId = row.dataset.recordId;
-    if (event.target.matches("input")) {
-      setMediumSelected(recordId, event.target.checked);
+    if (event.target.closest(".row-check")) {
       return;
     }
 
+    const recordId = row.dataset.recordId;
     setMediumSelected(recordId, !reviewState.selectedMediumIds.has(recordId));
+  });
+
+  document.querySelector("#mediumBatchRows").addEventListener("change", (event) => {
+    if (!event.target.matches(".row-check input")) {
+      return;
+    }
+
+    const row = event.target.closest("[data-record-id]");
+    if (!row) {
+      return;
+    }
+
+    setMediumSelected(row.dataset.recordId, event.target.checked);
   });
 
   document.querySelector("#clearMediumSelection").addEventListener("click", () => {
@@ -102,10 +114,7 @@ function renderReview() {
   setText("highQueueCount", high.length);
   syncSelectedMediumIds(medium);
   setText("mediumSelectedCount", `${reviewState.selectedMediumIds.size} selected`);
-  setSelectAllState(
-    medium.length > 0 && reviewState.selectedMediumIds.size === medium.length,
-    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < medium.length
-  );
+  syncSelectAllState(medium);
 
   highPanel.hidden = !hasRun || reviewState.activeTab !== "high";
   mediumPanel.hidden = !hasRun || reviewState.activeTab !== "medium";
@@ -246,10 +255,7 @@ function renderMediumBatch(rows) {
   }).join("");
 
   setText("mediumSelectedCount", `${reviewState.selectedMediumIds.size} selected`);
-  setSelectAllState(
-    rows.length > 0 && reviewState.selectedMediumIds.size === rows.length,
-    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < rows.length
-  );
+  syncSelectAllState(rows);
 }
 
 function renderDecisionHistory(rows) {
@@ -320,10 +326,6 @@ function setMediumSelected(recordId, isSelected) {
   } else {
     reviewState.selectedMediumIds.delete(recordId);
   }
-  setSelectAllState(
-    mediumRiskRows().length > 0 && reviewState.selectedMediumIds.size === mediumRiskRows().length,
-    reviewState.selectedMediumIds.size > 0 && reviewState.selectedMediumIds.size < mediumRiskRows().length
-  );
   renderMediumBatch(mediumRiskRows());
 }
 
@@ -424,11 +426,18 @@ function toggleSelectAll(isSelected) {
   renderMediumBatch(rows);
 }
 
+function syncSelectAllState(rows = mediumRiskRows()) {
+  const total = rows.length;
+  const selected = reviewState.selectedMediumIds.size;
+  setSelectAllState(total > 0 && selected === total, selected > 0 && selected < total);
+}
+
 function setSelectAllState(isChecked, isPartial = false) {
   const checkbox = document.querySelector("#mediumSelectAll");
   if (checkbox) {
     checkbox.checked = Boolean(isChecked);
     checkbox.indeterminate = Boolean(isPartial);
+    checkbox.disabled = mediumRiskRows().length === 0;
   }
 }
 
