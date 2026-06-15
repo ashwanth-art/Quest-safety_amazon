@@ -1002,6 +1002,7 @@ tbody tr:hover {
   font-size: 0.82rem;
   font-weight: 900;
   color: #3d557b;
+  min-height: 34px;
 }
 
 .active-filter-row {
@@ -2608,7 +2609,7 @@ tbody tr:hover {
 
 .review-table th.select-all-col,
 .review-table td:first-child {
-  width: 88px;
+  width: 132px;
 }
 
 .review-table td {
@@ -2679,7 +2680,7 @@ tbody tr:hover {
 }
 
 .row-check input:checked + span::after {
-  content: "✓";
+  content: "\2713";
 }
 
 .table-select-all input {
@@ -2713,13 +2714,13 @@ tbody tr:hover {
 .table-select-all input:checked + span::before {
   border-color: #1f925b;
   background: #1f925b;
-  content: "✓";
+  content: "\2713";
 }
 
 .table-select-all input:indeterminate + span::before {
   border-color: #1f925b;
   background: #e7f6ef;
-  content: "−";
+  content: "\2212";
   color: #1f925b;
 }
 
@@ -3104,3 +3105,7 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+
